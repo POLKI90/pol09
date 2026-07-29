@@ -207,6 +207,7 @@
   .versus .choice{ font-size: 44px; }
   .versus .vs{ font-family:'Press Start 2P'; font-size: 12px; color: var(--dim); }
   .versus .who{ font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-top: 6px; }
+  .versus .who .avatar-tag{ display:block; font-size:22px; margin-bottom: 4px; }
 
   .score{
     text-align:center; font-size: 12px; color: var(--dim); letter-spacing: 2px; margin-top: 10px;
@@ -236,8 +237,13 @@
     margin-bottom: 16px;
     gap: 6px;
   }
-  .account-bar .who{ font-size: 12px; letter-spacing: 1px; }
+  .account-bar .who{ font-size: 12px; letter-spacing: 1px; display:flex; align-items:center; gap:8px; }
   .account-bar .who .lvl{ color: var(--yellow); }
+  .account-bar .avatar-badge{
+    font-size: 20px; line-height:1; width: 30px; height:30px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center; flex: 0 0 auto;
+  }
   .account-bar .mini-btn{
     background: transparent; border: 1px solid rgba(255,255,255,0.15);
     color: var(--dim); font-size: 10px; padding: 6px 10px; border-radius: 8px;
@@ -262,6 +268,7 @@
     border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
     margin-bottom: 8px; font-size: 12px;
   }
+  .friend-row .fname{ display:flex; align-items:center; gap:8px; }
   .friend-row .lvl{ color: var(--yellow); font-size: 11px; }
 
   /* --- coins / shop --- */
@@ -301,6 +308,18 @@
   }
   .preview-btn:hover{ color: var(--cyan); border-color: var(--cyan); }
 
+  /* --- avatar picker --- */
+  .avatar-grid{
+    display:grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px;
+  }
+  .avatar-cell{
+    font-size: 24px; padding: 10px 0; border-radius: 10px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .avatar-cell:hover{ border-color: var(--cyan); box-shadow: 0 0 10px rgba(43,227,255,0.3); }
+  .avatar-cell.selected{ border-color: var(--yellow); box-shadow: 0 0 12px rgba(255,210,63,0.4); }
+
   /* --- leaderboard --- */
   .rank-row{
     display:flex; justify-content:space-between; align-items:center;
@@ -308,6 +327,7 @@
     border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
     margin-bottom: 8px; font-size: 12px;
   }
+  .rank-row .rname{ display:flex; align-items:center; gap:8px; }
   .rank-row .rnum{ color: var(--dim); margin-right: 8px; font-size: 11px; }
   .rank-row.me{ border-color: var(--yellow); box-shadow: 0 0 14px rgba(255,210,63,0.2); }
   .rank-row .rpts{ color: var(--cyan); font-size: 11px; }
@@ -351,6 +371,199 @@
     animation: celebFlashPulse 0.5s ease-out; z-index: 4; pointer-events:none;
   }
   @keyframes celebFlashPulse{ 0%{ opacity:0.85; } 100%{ opacity:0; } }
+
+  /* --- KO celebration (avatar-based, no weapons) --- */
+  .ko-stage{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    gap: 36px; z-index: 6; pointer-events:none;
+  }
+  .ko-fighter{ text-align:center; }
+  .ko-fighter .face{ font-size: 56px; display:block; }
+  .ko-fighter .tag{
+    font-size: 8px; letter-spacing: 1px; color: var(--dim); margin-top: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .ko-winner .face{ animation: koPunch 0.7s ease-out; }
+  @keyframes koPunch{
+    0%{ transform: translateX(-16px) rotate(-8deg); }
+    45%{ transform: translateX(18px) rotate(6deg); }
+    100%{ transform: translateX(0) rotate(0deg); }
+  }
+  .ko-loser .face{ animation: koHit 0.7s ease-out 0.35s both; display:inline-block; }
+  @keyframes koHit{
+    0%{ transform: scale(1) rotate(0deg); opacity:1; }
+    30%{ transform: scale(1.25) rotate(18deg); }
+    60%{ transform: scale(0.85) rotate(-16deg); opacity:0.7; }
+    100%{ transform: scale(1) rotate(0deg); opacity:1; }
+  }
+  .ko-impact{
+    position:absolute; top:50%; left:50%; transform: translate(-50%,-50%);
+    font-size: 40px; opacity:0; animation: koImpact 0.6s ease-out 0.3s both;
+  }
+  @keyframes koImpact{
+    0%{ opacity:0; transform: translate(-50%,-50%) scale(0.4); }
+    40%{ opacity:1; transform: translate(-50%,-50%) scale(1.3); }
+    100%{ opacity:0; transform: translate(-50%,-50%) scale(1.6); }
+  }
+  .ko-stars{
+    position:absolute; font-size: 20px; animation: koStar 1.1s ease-out 0.4s both;
+  }
+  @keyframes koStar{
+    0%{ opacity:0; transform: translateY(0) rotate(0deg); }
+    30%{ opacity:1; }
+    100%{ opacity:0; transform: translateY(-24px) rotate(200deg); }
+  }
+  .ko-title-card{
+    position:absolute; top:22%; left:50%; transform:translate(-50%,-50%);
+    font-family:'Press Start 2P', monospace; font-size: 30px; color: var(--yellow);
+    text-shadow: 0 0 14px rgba(255,210,63,0.8), 3px 3px 0 rgba(0,0,0,0.6);
+    opacity:0; animation: koTitleZoom 0.7s ease-out 0.55s both; z-index:7;
+  }
+  @keyframes koTitleZoom{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.2) rotate(-8deg); }
+    60%{ opacity:1; transform:translate(-50%,-50%) scale(1.15) rotate(4deg); }
+    100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg); }
+  }
+  .ko-winner.taunt .face{ animation: koPunch 0.7s ease-out, koTaunt 0.55s ease-out 0.95s both; }
+  @keyframes koTaunt{
+    0%{ transform: translateY(0) scale(1); }
+    30%{ transform: translateY(-10px) scale(1.15); }
+    60%{ transform: translateY(0) scale(1.05); }
+    100%{ transform: translateY(0) scale(1); }
+  }
+  .ko-trophy{
+    position:absolute; font-size: 26px; top: 6%; left: 50%; transform: translate(-50%,0);
+    opacity:0; animation: koTrophyRise 0.8s ease-out 1.15s both; z-index:7;
+  }
+  @keyframes koTrophyRise{
+    0%{ opacity:0; transform: translate(-50%,20px) scale(0.5); }
+    60%{ opacity:1; transform: translate(-50%,-6px) scale(1.15); }
+    100%{ opacity:1; transform: translate(-50%,0) scale(1); }
+  }
+  .ko-crowd{
+    position:absolute; font-size: 17px; animation: koCrowdCheer 1s ease-out both;
+  }
+  @keyframes koCrowdCheer{
+    0%{ opacity:0; transform: translateY(6px); }
+    30%{ opacity:1; }
+    100%{ opacity:0; transform: translateY(-16px); }
+  }
+
+  /* --- GUN CELEBRATION (Pixelated Gun & Laser Blast Animation) --- */
+  .gun-stage{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    gap: 40px; z-index: 6; pointer-events:none;
+  }
+  .gun-fighter{ text-align:center; position: relative; }
+  .gun-fighter .face{ font-size: 56px; display:block; }
+  .gun-fighter .tag{
+    font-size: 8px; letter-spacing: 1px; color: var(--dim); margin-top: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .gun-weapon{
+    position: absolute; font-size: 36px; top: 10px; right: -30px;
+    animation: gunAim 0.6s ease-out both;
+    filter: drop-shadow(0 0 8px var(--cyan));
+  }
+  @keyframes gunAim{
+    0%{ transform: scale(0.2) translateX(-20px) rotate(-20deg); opacity: 0; }
+    60%{ transform: scale(1.2) translateX(4px) rotate(5deg); opacity: 1; }
+    100%{ transform: scale(1) translateX(0) rotate(0deg); opacity: 1; }
+  }
+  .gun-laser{
+    position: absolute; top: 28px; left: 60px; width: 0px; height: 6px;
+    background: linear-gradient(90deg, var(--cyan), #fff);
+    box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan);
+    border-radius: 3px; z-index: 8;
+    animation: laserShoot 0.4s ease-out 0.4s both;
+  }
+  @keyframes laserShoot{
+    0%{ width: 0px; opacity: 1; transform: scaleY(0.5); }
+    50%{ width: 140px; opacity: 1; transform: scaleY(1.5); }
+    100%{ width: 140px; opacity: 0; transform: scaleY(0.2); }
+  }
+  .gun-target-hit{
+    animation: targetHit 0.6s ease-out 0.45s both; display: inline-block;
+  }
+  @keyframes targetHit{
+    0%{ transform: scale(1) rotate(0deg); filter: brightness(1); }
+    30%{ transform: scale(1.3) rotate(-15deg); filter: brightness(2) drop-shadow(0 0 15px var(--pink)); }
+    60%{ transform: scale(0.9) rotate(15deg); filter: brightness(1.5); }
+    100%{ transform: scale(1) rotate(0deg); filter: brightness(1); }
+  }
+  .gun-smoke{
+    position: absolute; font-size: 24px; top: -10px; right: -40px; opacity: 0;
+    animation: smokeRise 0.8s ease-out 0.5s both;
+  }
+  @keyframes smokeRise{
+    0%{ transform: translateY(0) scale(0.5); opacity: 1; }
+    100%{ transform: translateY(-30px) scale(1.5); opacity: 0; }
+  }
+
+  /* --- SOAK THE PODIUM (victory water shower over the winner's own avatar) --- */
+  .soak-stage{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; z-index: 6; pointer-events:none;
+  }
+  .soak-avatar{
+    font-size: 60px; position:relative; z-index:2;
+    animation: soakBounce 1.4s ease-in-out 0.3s both;
+  }
+  @keyframes soakBounce{
+    0%, 100%{ transform: translateY(0); }
+    20%{ transform: translateY(-4px); }
+    40%{ transform: translateY(2px); }
+    60%{ transform: translateY(-3px); }
+  }
+  .soak-podium{ font-size: 30px; margin-top: -6px; }
+  .soak-tag{
+    font-size: 8px; letter-spacing: 1px; color: var(--dim); margin-top: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .soak-drop{
+    position:absolute; top:-20px; font-size: 20px; opacity:0;
+    animation-name: soakDropFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+  }
+  @keyframes soakDropFall{
+    0%{ opacity:0; transform: translateY(0); }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ opacity:0; transform: translateY(140px); }
+  }
+  .soak-splash{
+    position:absolute; font-size: 16px; opacity:0;
+    animation: soakSplashPop 0.5s ease-out both;
+  }
+  @keyframes soakSplashPop{
+    0%{ opacity:0; transform: scale(0.4); }
+    40%{ opacity:1; transform: scale(1.1); }
+    100%{ opacity:0; transform: scale(1.3) translateY(6px); }
+  }
+
+  /* --- BALLOON BASH TOGETHER (both avatars soaked together, side by side) --- */
+  .balloon-stage{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    gap: 40px; z-index: 6; pointer-events:none;
+  }
+  .balloon-fighter{ text-align:center; }
+  .balloon-fighter .face{
+    font-size: 52px; display:block;
+    animation: balloonBounce 1.2s ease-in-out 0.2s both;
+  }
+  @keyframes balloonBounce{
+    0%, 100%{ transform: translateY(0); }
+    25%{ transform: translateY(-6px); }
+    50%{ transform: translateY(2px); }
+    75%{ transform: translateY(-3px); }
+  }
+  .balloon-fighter .tag{
+    font-size: 8px; letter-spacing: 1px; color: var(--dim); margin-top: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+  .balloon-drop{
+    position:absolute; top:-20px; font-size: 18px; opacity:0;
+    animation-name: soakDropFall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+  }
 
   /* --- shop celebration preview: fixed to the viewport so it's visible no matter
      how far down the (long) shop list the person has scrolled --- */
@@ -444,7 +657,7 @@ function render(html, extraClass){
 
 // ---------- SUPABASE CONFIG ----------
 // Fill these in from your Supabase project: Settings -> API
-const SUPABASE_URL = 'https://wuabblulcagkvbovmdam.supabase.co';        // e.g. https://xxxxx.supabase.co;        // e.g. https://xxxxx.supabase.co
+const SUPABASE_URL = 'https://wuabblulcagkvbovmdam.supabase.co';        // e.g. https://xxxxx.supabase.co
 const SUPABASE_ANON_KEY = 'sb_publishable_dyCUUeWO1Ctu5a25h0li6A__LeI0jnt';
 
 const supabaseClient = (SUPABASE_URL.startsWith('http'))
@@ -632,10 +845,56 @@ const CELEBRATIONS = [
   { id: 20, cost: 62, name: 'VOLCANO FURY',       tier: 'legendary', emojis: ['&#127755;', '&#128293;'],                         count: 22, dur: 1.4, mega: true, shake: true, flash: true },
   { id: 21, cost: 65, name: 'LEGENDARY CROWN',    tier: 'legendary', emojis: ['&#128081;', '&#10024;', '&#11088;'],              count: 24, dur: 1.5, mega: true, rainbow: true, waves: 2 },
   { id: 22, cost: 70, name: 'ULTIMATE MEGA BLAST', tier: 'legendary', emojis: ['&#127881;', '&#127878;', '&#128165;', '&#10024;'], count: 26, dur: 1.5, mega: true, rainbow: true, shake: true, flash: true, waves: 2 },
+  { id: 23, cost: 80, name: 'KO KNOCKOUT',        tier: 'legendary', avatarKO: true },
+  { id: 24, cost: 95, name: 'CHAMPION KO',        tier: 'legendary', avatarKO: true, combo: true },
+  { id: 25, cost: 45, name: 'WATER BALLOON BASH', tier: 'rare',      emojis: ['&#127880;', '&#128167;', '&#128166;'],           count: 16, dur: 1.2 },
+  { id: 26, cost: 50, name: 'PAINT SPLASH PARTY', tier: 'rare',      emojis: ['&#127912;', '&#127908;', '&#10024;'],            count: 16, dur: 1.2, rainbow: true },
+  { id: 27, cost: 60, name: 'SOAK THE PODIUM',    tier: 'epic',      avatarSoak: true },
+  { id: 28, cost: 55, name: 'BALLOON BASH TOGETHER', tier: 'epic',   avatarBalloonMutual: true },
+  { id: 29, cost: 65, name: 'GUN CELEBRATION',    tier: 'epic',      avatarGun: true },
 ];
 
 function getCelebration(id){
   return CELEBRATIONS.find(c => c.id === id) || CELEBRATIONS[0];
+}
+
+// Celebrations that depict a "winner vs loser" (KO Knockout, Champion KO, Gun
+// Celebration) are shown to BOTH players in an online match — the loser sees
+// their own screen replay it from the losing side. Other celebrations (confetti,
+// soak, mutual balloon bash, etc.) still only play for the winner.
+const LOSER_VISIBLE_CELEBS = [23, 24, 29];
+
+// Called by the WINNER right after a win in an online match. If their selected
+// celebration is one the loser should also see, this posts the winner's avatar +
+// celebration id to shared storage so the losing client can pick it up.
+async function announceWinnerCelebration(prefix, code, myField){
+  if(!currentAccount) return;
+  const celebId = currentAccount.selectedCelebration;
+  if(!LOSER_VISIBLE_CELEBS.includes(celebId)) return;
+  await storageSet(`${prefix}_${code}_${myField}_wincelab`, JSON.stringify({
+    avatar: currentAccount.avatar || DEFAULT_AVATAR,
+    celebId,
+    ts: Date.now()
+  }));
+}
+
+// Called by the LOSER right after a loss in an online match. Polls briefly for
+// the winner's announcement (they may not have written it yet) and returns
+// { avatar, celebId } if the winner used a loser-visible celebration, else null.
+async function fetchWinnerCelebration(prefix, code, oppField){
+  const key = `${prefix}_${code}_${oppField}_wincelab`;
+  for(let i = 0; i < 5; i++){
+    const raw = await storageGet(key);
+    if(raw){
+      try{
+        const data = JSON.parse(raw);
+        if(data && LOSER_VISIBLE_CELEBS.includes(data.celebId)) return data;
+        return null;
+      } catch(e){ return null; }
+    }
+    await new Promise(r => setTimeout(r, 350));
+  }
+  return null;
 }
 
 // Ensure older saved accounts get the new coin/celebration/points fields
@@ -645,12 +904,29 @@ function ensureAccountDefaults(acct){
   if(!Array.isArray(acct.ownedCelebrations)) acct.ownedCelebrations = [1];
   if(!acct.ownedCelebrations.includes(1)) acct.ownedCelebrations.push(1);
   if(typeof acct.selectedCelebration !== 'number') acct.selectedCelebration = 1;
+  if(typeof acct.avatar !== 'string' || !acct.avatar) acct.avatar = DEFAULT_AVATAR;
   return acct;
 }
 
 // Builds the HTML for a celebration overlay + title banner, to drop into a win screen.
-function renderCelebrationMarkup(celebrationId){
+// opts (optional) lets a LOSER's screen replay a loser-visible celebration (KO,
+// Champion KO, Gun) from the losing side: { winnerAvatar, viewerIsWinner: false }.
+function renderCelebrationMarkup(celebrationId, opts){
   const c = getCelebration(celebrationId);
+
+  if(c.avatarKO){
+    return renderKOCelebration(c, opts);
+  }
+  if(c.avatarSoak){
+    return renderSoakCelebration(c);
+  }
+  if(c.avatarBalloonMutual){
+    return renderBalloonMutualCelebration(c);
+  }
+  if(c.avatarGun){
+    return renderGunCelebration(c, opts);
+  }
+
   const waves = c.waves || 1;
   let particles = '';
   for(let w = 0; w < waves; w++){
@@ -674,6 +950,193 @@ function renderCelebrationMarkup(celebrationId){
   };
 }
 
+// The 80-coin "victory" celebration: your own avatar takes center stage as the winner,
+// with a generic (non-identifying) knocked-out cartoon face as the "loser" — no weapons,
+// no imagery aimed at a real person's picture.
+const KO_LOSER_FACE = '&#128565;'; // dizzy face
+const KO_IMPACT_EMOJIS = ['&#128165;', '&#128171;'];
+const KO_STAR_EMOJIS = ['&#11088;', '&#10024;', '&#128038;'];
+
+const KO_CROWD_EMOJIS = ['&#128079;', '&#127881;', '&#128561;'];
+
+function renderKOCelebration(c, opts){
+  const viewerIsWinner = !opts || opts.viewerIsWinner !== false;
+  const winnerAvatar = (opts && opts.winnerAvatar)
+    ? opts.winnerAvatar
+    : ((currentAccount && currentAccount.avatar) ? currentAccount.avatar : DEFAULT_AVATAR);
+  const winnerTag = viewerIsWinner ? 'YOU' : 'OPPONENT';
+  const loserTag = viewerIsWinner ? 'OPPONENT' : 'YOU';
+
+  // One impact burst for the base tier; three staggered hits (a "combo") for the
+  // rarer Champion tier, each landing slightly offset so it reads as a flurry.
+  const hitCount = c.combo ? 3 : 1;
+  let impacts = '';
+  for(let i = 0; i < hitCount; i++){
+    const impact = KO_IMPACT_EMOJIS[Math.floor(Math.random() * KO_IMPACT_EMOJIS.length)];
+    const delay = 0.3 + i * 0.22;
+    const xOffset = (i - (hitCount - 1) / 2) * 10;
+    impacts += `<span class="ko-impact" style="animation-delay:${delay}s; margin-left:${xOffset}px;">${impact}</span>`;
+  }
+
+  let stars = '';
+  const starCount = c.combo ? 9 : 6;
+  for(let i = 0; i < starCount; i++){
+    const angle = (i / starCount) * 360;
+    const dist = 30 + Math.random() * 14;
+    const x = 50 + Math.cos(angle * Math.PI / 180) * dist;
+    const y = 42 + Math.sin(angle * Math.PI / 180) * dist * 0.6;
+    const emoji = KO_STAR_EMOJIS[Math.floor(Math.random() * KO_STAR_EMOJIS.length)];
+    const delay = 0.35 + Math.random() * (c.combo ? 0.7 : 0.25);
+    stars += `<span class="ko-stars" style="left:${x}%; top:${y}%; animation-delay:${delay}s;">${emoji}</span>`;
+  }
+
+  // Champion tier adds a trophy raise over the winner and a ring of crowd-cheer emojis.
+  let trophy = '';
+  let crowd = '';
+  if(c.combo){
+    trophy = `<span class="ko-trophy">&#127942;</span>`;
+    for(let i = 0; i < 8; i++){
+      const x = 8 + Math.random() * 84;
+      const y = i % 2 === 0 ? (6 + Math.random() * 10) : (80 + Math.random() * 12);
+      const emoji = KO_CROWD_EMOJIS[Math.floor(Math.random() * KO_CROWD_EMOJIS.length)];
+      const delay = 0.5 + Math.random() * 0.6;
+      crowd += `<span class="ko-crowd" style="left:${x}%; top:${y}%; animation-delay:${delay}s;">${emoji}</span>`;
+    }
+  }
+
+  const overlay = `
+    <div class="celebration-overlay">
+      <div class="ko-stage">
+        <div class="ko-fighter ko-winner taunt">
+          <span class="face">${winnerAvatar}</span>
+          <span class="tag">${winnerTag}</span>
+        </div>
+        <div class="ko-fighter ko-loser">
+          <span class="face">${KO_LOSER_FACE}</span>
+          <span class="tag">${loserTag}</span>
+        </div>
+        ${impacts}
+        ${stars}
+        ${trophy}
+        ${crowd}
+        <div class="ko-title-card">K.O.</div>
+      </div>
+    </div>
+  `;
+  const title = `<div class="celeb-title" style="font-size:16px; color: var(--yellow); text-shadow: 0 0 10px rgba(255,210,63,0.6);">${c.name}</div>`;
+  return { overlay, title, screenExtraClass: 'celeb-shake celeb-flash' };
+}
+
+// The "GUN CELEBRATION": Your avatar fires a retro pixel laser gun across the screen!
+function renderGunCelebration(c, opts){
+  const viewerIsWinner = !opts || opts.viewerIsWinner !== false;
+  const winnerAvatar = (opts && opts.winnerAvatar)
+    ? opts.winnerAvatar
+    : ((currentAccount && currentAccount.avatar) ? currentAccount.avatar : DEFAULT_AVATAR);
+  const shooterTag = viewerIsWinner ? 'SHOOTER (YOU)' : 'SHOOTER (OPPONENT)';
+  const targetTag = viewerIsWinner ? 'TARGET (OPPONENT)' : 'TARGET (YOU)';
+  const overlay = `
+    <div class="celebration-overlay">
+      <div class="gun-stage">
+        <div class="gun-fighter">
+          <span class="face">${winnerAvatar}</span>
+          <span class="tag">${shooterTag}</span>
+          <span class="gun-weapon">&#128299;</span>
+          <span class="gun-laser"></span>
+          <span class="gun-smoke">&#128168;</span>
+        </div>
+        <div class="gun-fighter">
+          <span class="face gun-target-hit">&#128565;</span>
+          <span class="tag">${targetTag}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  const title = `<div class="celeb-title" style="font-size:14px; color: var(--cyan); text-shadow: 0 0 10px rgba(43,227,255,0.6);">${c.name}</div>`;
+  return { overlay, title, screenExtraClass: 'celeb-shake celeb-flash' };
+}
+
+// The "SOAK THE PODIUM" celebration: a classic locker-room-style victory shower —
+// water falls on your OWN avatar as it stands on a podium. Nothing is aimed at
+// anyone else; the loser doesn't appear in this one at all.
+const SOAK_DROP_EMOJIS = ['&#128167;', '&#128166;'];
+const SOAK_SPLASH_EMOJIS = ['&#128167;', '&#10024;'];
+
+function renderSoakCelebration(c){
+  const winnerAvatar = (currentAccount && currentAccount.avatar) ? currentAccount.avatar : DEFAULT_AVATAR;
+
+  let drops = '';
+  for(let i = 0; i < 20; i++){
+    const left = 30 + Math.random() * 40; // keep drops falling roughly over the avatar
+    const delay = Math.random() * 0.6;
+    const dur = 0.7 + Math.random() * 0.5;
+    const size = 14 + Math.random() * 10;
+    const emoji = SOAK_DROP_EMOJIS[Math.floor(Math.random() * SOAK_DROP_EMOJIS.length)];
+    drops += `<span class="soak-drop" style="left:${left}%; font-size:${size}px; animation-delay:${delay}s; animation-duration:${dur}s;">${emoji}</span>`;
+  }
+
+  let splashes = '';
+  for(let i = 0; i < 10; i++){
+    const left = 25 + Math.random() * 50;
+    const top = 55 + Math.random() * 15;
+    const delay = 0.5 + Math.random() * 0.6;
+    const emoji = SOAK_SPLASH_EMOJIS[Math.floor(Math.random() * SOAK_SPLASH_EMOJIS.length)];
+    splashes += `<span class="soak-splash" style="left:${left}%; top:${top}%; animation-delay:${delay}s;">${emoji}</span>`;
+  }
+
+  const overlay = `
+    <div class="celebration-overlay">
+      ${drops}
+      <div class="soak-stage">
+        <span class="soak-avatar">${winnerAvatar}</span>
+        <span class="soak-podium">&#127942;</span>
+        <span class="soak-tag">CHAMPION</span>
+        ${splashes}
+      </div>
+    </div>
+  `;
+  const title = `<div class="celeb-title" style="font-size:14px; color: var(--cyan); text-shadow: 0 0 10px rgba(43,227,255,0.6);">${c.name}</div>`;
+  return { overlay, title, screenExtraClass: '' };
+}
+
+// The "BALLOON BASH TOGETHER" celebration: both avatars stand side by side and get
+// soaked equally by balloons falling from above — a shared celebration, not one
+// avatar doing anything to the other.
+const BALLOON_FACE_OPPONENT = '&#128522;'; // generic happy face, not identifying anyone
+const BALLOON_DROP_EMOJIS = ['&#127880;', '&#128167;', '&#128166;'];
+
+function renderBalloonMutualCelebration(c){
+  const winnerAvatar = (currentAccount && currentAccount.avatar) ? currentAccount.avatar : DEFAULT_AVATAR;
+
+  let drops = '';
+  for(let i = 0; i < 22; i++){
+    const left = Math.random() * 100;
+    const delay = Math.random() * 0.7;
+    const dur = 0.8 + Math.random() * 0.5;
+    const size = 14 + Math.random() * 10;
+    const emoji = BALLOON_DROP_EMOJIS[Math.floor(Math.random() * BALLOON_DROP_EMOJIS.length)];
+    drops += `<span class="balloon-drop" style="left:${left}%; font-size:${size}px; animation-delay:${delay}s; animation-duration:${dur}s;">${emoji}</span>`;
+  }
+
+  const overlay = `
+    <div class="celebration-overlay">
+      ${drops}
+      <div class="balloon-stage">
+        <div class="balloon-fighter">
+          <span class="face">${winnerAvatar}</span>
+          <span class="tag">YOU</span>
+        </div>
+        <div class="balloon-fighter">
+          <span class="face">${BALLOON_FACE_OPPONENT}</span>
+          <span class="tag">OPPONENT</span>
+        </div>
+      </div>
+    </div>
+  `;
+  const title = `<div class="celeb-title" style="font-size:14px; color: var(--cyan); text-shadow: 0 0 10px rgba(43,227,255,0.6);">${c.name}</div>`;
+  return { overlay, title, screenExtraClass: '' };
+}
+
 function levelUpBanner(leveledUp){
   if(!leveledUp) return '';
   return `<div class="level-up">&#9733; LEVEL UP! YOU ARE NOW LEVEL ${currentAccount.level} &#9733;</div>`;
@@ -683,14 +1146,17 @@ function accountBar(){
   if(!currentAccount) return '';
   const inLevelXp = currentAccount.xp - xpForLevel(currentAccount.level);
   const pct = Math.min(100, inLevelXp);
+  const avatar = currentAccount.avatar || DEFAULT_AVATAR;
   return `
     <div class="account-bar">
+      <span class="avatar-badge">${avatar}</span>
       <div style="flex:1; min-width: 140px;">
         <div class="who">${currentAccount.username} &middot; LV <span class="lvl">${currentAccount.level}</span> &middot; ${currentAccount.wins} WINS</div>
         <div class="xpbar"><div class="xpbar-fill" style="width:${pct}%;"></div></div>
       </div>
       <span class="coin-pill">&#129689; ${currentAccount.coins || 0}</span>
       <span class="points-pill">&#127942; ${currentAccount.points || 0} PTS</span>
+      <button class="mini-btn" onclick="beep(300); showAvatarPicker()">AVATAR</button>
       <button class="mini-btn" onclick="beep(300); showLeaderboard()">RANK</button>
       <button class="mini-btn" onclick="beep(300); showShop()">SHOP</button>
       <button class="mini-btn" onclick="beep(300); showFriends()">FRIENDS</button>
@@ -765,7 +1231,7 @@ async function attemptLogin(){
     beep(660, 0.15);
     showMenu();
   } else {
-    currentAccount = { username, pin, level: 1, xp: 0, wins: 0, friends: [], coins: 0, points: 0, ownedCelebrations: [1], selectedCelebration: 1 };
+    currentAccount = { username, pin, level: 1, xp: 0, wins: 0, friends: [], coins: 0, points: 0, ownedCelebrations: [1], selectedCelebration: 1, avatar: DEFAULT_AVATAR };
     const ok = await saveAccount();
     if(!ok){ msg.textContent = 'network error, try again'; currentAccount = null; return; }
     if(rememberMe) addRememberedLogin(username, pin);
@@ -857,6 +1323,40 @@ function logout(){
   showAccountSwitcher();
 }
 
+// ---------- AVATARS (profile pictures — emoji-based, no image upload pipeline) ----------
+const DEFAULT_AVATAR = '&#128512;';
+const AVATARS = [
+  '&#128512;', '&#128513;', '&#128526;', '&#128512;'.replace('128512','128519'),
+  '&#129315;', '&#128123;', '&#129302;', '&#128125;',
+  '&#128009;', '&#128008;', '&#129418;', '&#128049;',
+  '&#129409;', '&#128058;', '&#128054;', '&#128053;',
+  '&#127774;', '&#9889;', '&#127801;', '&#128293;',
+  '&#127920;', '&#127918;', '&#9917;', '&#127942;',
+];
+
+function showAvatarPicker(){
+  if(!currentAccount){ showLogin(); return; }
+  const current = currentAccount.avatar || DEFAULT_AVATAR;
+  render(`
+    <h2 class="title">PROFILE PICTURE</h2>
+    ${accountBar()}
+    <p style="color:var(--dim); font-size:11px; margin-top:-6px;">pick an avatar &mdash; shown next to your name everywhere</p>
+    <div class="avatar-grid">
+      ${AVATARS.map(a => `
+        <button class="avatar-cell ${a === current ? 'selected' : ''}" onclick="beep(440); selectAvatar('${a}')">${a}</button>
+      `).join('')}
+    </div>
+    <a class="back-link" onclick="beep(300); showMenu()">&#8592; BACK TO MENU</a>
+  `);
+}
+
+async function selectAvatar(avatar){
+  if(!currentAccount) return;
+  currentAccount.avatar = avatar;
+  await saveAccount();
+  showAvatarPicker();
+}
+
 function showFriends(){
   if(!currentAccount){ showLogin(); return; }
   render(`
@@ -910,12 +1410,13 @@ async function loadFriendList(){
   }
   const rows = await Promise.all(currentAccount.friends.map(async (name) => {
     const raw = await storageGet(acctKey(name));
-    if(!raw) return `<div class="friend-row"><span>${name}</span><span class="lvl">(no data)</span></div>`;
+    if(!raw) return `<div class="friend-row"><span class="fname">${name}</span><span class="lvl">(no data)</span></div>`;
     try{
       const f = JSON.parse(raw);
-      return `<div class="friend-row"><span>${f.username}</span><span class="lvl">LV ${f.level} &middot; ${f.wins}W</span></div>`;
+      const favatar = f.avatar || DEFAULT_AVATAR;
+      return `<div class="friend-row"><span class="fname"><span>${favatar}</span>${f.username}</span><span class="lvl">LV ${f.level} &middot; ${f.wins}W</span></div>`;
     } catch(e){
-      return `<div class="friend-row"><span>${name}</span><span class="lvl">(no data)</span></div>`;
+      return `<div class="friend-row"><span class="fname">${name}</span><span class="lvl">(no data)</span></div>`;
     }
   }));
   listEl.innerHTML = rows.join('');
@@ -944,9 +1445,10 @@ async function showLeaderboard(){
   const rowsHtml = top.map((a, i) => {
     const rank = i + 1;
     const isMe = a.username.toLowerCase() === currentAccount.username.toLowerCase();
+    const avatar = a.avatar || DEFAULT_AVATAR;
     return `
       <div class="rank-row ${isMe ? 'me' : ''}">
-        <span><span class="rnum">#${rank}</span>${a.username}${isMe ? ' (YOU)' : ''}</span>
+        <span class="rname"><span class="rnum">#${rank}</span><span>${avatar}</span>${a.username}${isMe ? ' (YOU)' : ''}</span>
         <span class="rpts">${a.points || 0} PTS</span>
       </div>
     `;
@@ -1049,8 +1551,17 @@ function previewCelebration(id){
   wrap.innerHTML = `${celeb.overlay}<div class="celeb-preview-title-wrap">${celeb.title}</div>`;
   document.body.appendChild(wrap);
 
-  const waves = c.waves || 1;
-  const totalMs = (c.dur * 1.3 + waves * 0.3) * 1000 + 400;
+  let totalMs;
+  if(c.avatarKO){
+    totalMs = c.combo ? 2600 : 1900; // Champion tier runs longer (combo hits + trophy raise)
+  } else if(c.avatarSoak || c.avatarGun){
+    totalMs = 1900;
+  } else if(c.avatarBalloonMutual){
+    totalMs = 1900;
+  } else {
+    const waves = c.waves || 1;
+    totalMs = (c.dur * 1.3 + waves * 0.3) * 1000 + 400;
+  }
   previewCleanupTimer = setTimeout(() => {
     wrap.remove();
   }, totalMs);
@@ -1307,6 +1818,11 @@ function showRPSHub(){
   `);
 }
 
+function myAvatarTag(){
+  const avatar = (currentAccount && currentAccount.avatar) ? currentAccount.avatar : DEFAULT_AVATAR;
+  return `<span class="avatar-tag">${avatar}</span>`;
+}
+
 function showRPSCPU(){
   render(`
     <h2 class="title">ROCK &middot; PAPER &middot; SCISSORS</h2>
@@ -1347,12 +1863,12 @@ async function playRPS(userKey){
     <div class="versus">
       <div>
         <div class="choice">${RPS[userKey].emoji}</div>
-        <div class="who">YOU</div>
+        <div class="who">${myAvatarTag()}YOU</div>
       </div>
       <div class="vs">VS</div>
       <div>
         <div class="choice">${RPS[cpuKey].emoji}</div>
-        <div class="who">CPU</div>
+        <div class="who"><span class="avatar-tag">&#129302;</span>CPU</div>
       </div>
     </div>
     <div class="feedback ${resultClass}" style="text-align:center; font-size:16px;">
@@ -1597,7 +2113,7 @@ async function submitOnlineChoice(myKey){
     <div class="versus">
       <div>
         <div class="choice">${RPS[myKey].emoji}</div>
-        <div class="who">YOU</div>
+        <div class="who">${myAvatarTag()}YOU</div>
       </div>
       <div class="vs">VS</div>
       <div>
@@ -1629,11 +2145,16 @@ async function showOnlineResult(myKey, oppKey, myField, oppField){
     leveledUp = await addWin(30, coinsGain, RANK_POINTS.win);
     xpNote = ` <span style="font-size:11px; color:var(--dim);">(+30 XP &middot; +${coinsGain} &#129689; &middot; +${RANK_POINTS.win} PTS)</span>`;
     if(currentAccount) celeb = renderCelebrationMarkup(currentAccount.selectedCelebration);
+    await announceWinnerCelebration('rps', online.code, myField);
   }
   else {
     result = 'YOU LOSE'; resultClass = 'lose'; beep(140, 0.25, 'sawtooth');
     await addLoss(10, LOSS_COINS, RANK_POINTS.lose);
     xpNote = ` <span style="font-size:11px; color:var(--dim);">(-10 XP &middot; -${LOSS_COINS} &#129689; &middot; -${RANK_POINTS.lose} PTS)</span>`;
+    const winnerCeleb = await fetchWinnerCelebration('rps', online.code, oppField);
+    if(winnerCeleb){
+      celeb = renderCelebrationMarkup(winnerCeleb.celebId, { winnerAvatar: winnerCeleb.avatar, viewerIsWinner: false });
+    }
   }
 
   render(`
@@ -1642,7 +2163,7 @@ async function showOnlineResult(myKey, oppKey, myField, oppField){
     <div class="versus">
       <div>
         <div class="choice">${RPS[myKey].emoji}</div>
-        <div class="who">YOU</div>
+        <div class="who">${myAvatarTag()}YOU</div>
       </div>
       <div class="vs">VS</div>
       <div>
@@ -1985,6 +2506,9 @@ async function showNHFinalResult(mySolved, myAttempts, oppSolved, oppAttempts){
   const iWon = (mySolved && oppSolved && myAttempts < oppAttempts) || (mySolved && !oppSolved);
   const isTie = (mySolved && oppSolved && myAttempts === oppAttempts) || (!mySolved && !oppSolved);
 
+  const nhMyField = nh.role;
+  const nhOppField = nh.role === 'p1' ? 'p2' : 'p1';
+
   if(isTie){ result = "IT'S A TIE"; resultClass = 'hint'; beep(400); }
   else if(iWon){
     result = 'YOU WIN'; resultClass = 'win'; beep(880, 0.15);
@@ -1992,11 +2516,16 @@ async function showNHFinalResult(mySolved, myAttempts, oppSolved, oppAttempts){
     leveledUp = await addWin(30, coinsGain, RANK_POINTS.win);
     xpNote = ` <span style="font-size:11px; color:var(--dim);">(+30 XP &middot; +${coinsGain} &#129689; &middot; +${RANK_POINTS.win} PTS)</span>`;
     if(currentAccount) celeb = renderCelebrationMarkup(currentAccount.selectedCelebration);
+    await announceWinnerCelebration('nh', nh.code, nhMyField);
   } else {
     result = 'YOU LOSE'; resultClass = 'lose'; beep(140, 0.25, 'sawtooth');
     const coinsLoss = NH_LOSS_COINS[nh.meta.diffKey] ?? LOSS_COINS;
     await addLoss(10, coinsLoss, RANK_POINTS.lose);
     xpNote = ` <span style="font-size:11px; color:var(--dim);">(-10 XP &middot; -${coinsLoss} &#129689; &middot; -${RANK_POINTS.lose} PTS)</span>`;
+    const winnerCeleb = await fetchWinnerCelebration('nh', nh.code, nhOppField);
+    if(winnerCeleb){
+      celeb = renderCelebrationMarkup(winnerCeleb.celebId, { winnerAvatar: winnerCeleb.avatar, viewerIsWinner: false });
+    }
   }
 
   render(`
@@ -2005,7 +2534,7 @@ async function showNHFinalResult(mySolved, myAttempts, oppSolved, oppAttempts){
     <div class="versus">
       <div>
         <div class="choice" style="font-size:22px;">${mySolved ? myAttempts : '&mdash;'}</div>
-        <div class="who">YOU ${mySolved ? 'GUESSES' : '(FAILED)'}</div>
+        <div class="who">${myAvatarTag()}YOU ${mySolved ? 'GUESSES' : '(FAILED)'}</div>
       </div>
       <div class="vs">VS</div>
       <div>
@@ -2026,8 +2555,12 @@ async function showNHFinalResult(mySolved, myAttempts, oppSolved, oppAttempts){
   `, celeb ? celeb.screenExtraClass : '');
 }
 
-showAccountSwitcher();
+// Initialize boot flow
+if(getRememberedLogins().length > 0){
+  showAccountSwitcher();
+} else {
+  showLogin();
+}
 </script>
-
 </body>
 </html>
