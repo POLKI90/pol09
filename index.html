@@ -607,6 +607,28 @@
     100%{ transform: scale(0.8) translateY(-30px); opacity:0; }
   }
 
+  /* --- TOURNAMENT MODE --- */
+  .tourny-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor:pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tourny-row:hover{ border-color: var(--cyan); box-shadow: 0 0 14px rgba(43,227,255,0.2); }
+  .tourny-row .info{ flex:1; }
+  .tourny-row .tname{ font-size: 12px; letter-spacing: 1px; }
+  .tourny-row .ttier{ font-size: 9px; color: var(--dim); letter-spacing: 1px; margin-top: 3px; }
+  .tourny-status-live{ color: var(--pink); }
+  .tourny-status-soon{ color: var(--yellow); }
+  .tourny-status-ended{ color: var(--dim); }
+  .tourny-detail-card{
+    background:var(--panel); border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px; padding:12px 14px; margin-bottom:14px;
+  }
+  .tourny-section-label{
+    color:var(--dim); font-size:11px; margin-bottom:6px; letter-spacing:1px;
+  }
+
   @media (prefers-reduced-motion: reduce){
     *{ animation: none !important; transition: none !important; }
   }
@@ -617,7 +639,7 @@
 <div>
   <div class="marquee">
     <h1>&#9733; GAME HUT &#9733;</h1>
-    <p>ARCADE CABINET &mdash; 2 GAMES ON ONE BOARD</p>
+    <p>ARCADE CABINET &mdash; 2 GAMES + TOURNAMENTS</p>
   </div>
 
   <div class="cabinet">
@@ -1567,6 +1589,284 @@ function previewCelebration(id){
   }, totalMs);
 }
 
+// =====================================================================
+// ---------- TOURNAMENT MODE ----------
+// =====================================================================
+// Tournaments are stored in the same shared kv_store under keys prefixed
+// "tournament_". Starts EMPTY — nobody is in a tournament until one is
+// created via createTournament() (call from browser console, or wire up
+// an admin UI later) and players choose to join.
+
+let activeTournaments = [];
+
+// Pulls every stored tournament row and keeps only ones still "active"
+// (not manually ended). Sorted newest-created first.
+async function loadActiveTournaments(){
+  activeTournaments = [];
+  if(!supabaseClient) return;
+  try{
+    const { data, error } = await supabaseClient
+      .from('kv_store')
+      .select('key,value')
+      .like('key', 'tournament\_%');
+    if(error || !data) return;
+
+    data.forEach(row => {
+      try{
+        const t = JSON.parse(row.value);
+        if(t && t.state === 'active') activeTournaments.push(t);
+      } catch(e){}
+    });
+    activeTournaments.sort((a, b) => b.createdAt - a.createdAt);
+  } catch(e){}
+}
+
+function tournamentStatus(t){
+  const now = Date.now();
+  if(now < t.startTime) return { label: 'STARTS SOON', cls: 'tourny-status-soon' };
+  if(now < t.endTime) return { label: 'LIVE', cls: 'tourny-status-live' };
+  return { label: 'ENDED', cls: 'tourny-status-ended' };
+}
+
+function formatSeconds(sec){
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if(h > 0) return `${h}h ${m}m`;
+  if(m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function showTournamentHub(){
+  stopNHPolling();
+  stopOnlinePolling();
+  render(`
+    ${accountBar()}
+    <h2 class="title">TOURNAMENTS</h2>
+    <p style="color:var(--dim); font-size:12px; margin-top:-10px;">compete in timed events for glory and coins</p>
+    <div id="tournamentList" style="margin-top:14px;">
+      <p class="feedback hint" style="text-align:center;"><span class="blink">&#9679;</span> loading tournaments&hellip;</p>
+    </div>
+    <a class="back-link" onclick="beep(300); showMenu()">&#8592; BACK TO MENU</a>
+  `);
+  loadAndDisplayTournaments();
+}
+
+async function loadAndDisplayTournaments(){
+  await loadActiveTournaments();
+
+  const listEl = document.getElementById('tournamentList');
+  if(!listEl) return;
+
+  if(activeTournaments.length === 0){
+    listEl.innerHTML = `<p style="color:var(--dim); font-size:11px; text-align:center; margin-top:20px;">no active tournaments yet &mdash; check back soon!</p>`;
+    return;
+  }
+
+  const rows = activeTournaments.map(t => {
+    const status = tournamentStatus(t);
+    const count = t.participants ? t.participants.length : 0;
+
+    return `
+      <div class="tourny-row" onclick="beep(300); showTournamentDetail('${t.id}')">
+        <div class="info">
+          <div class="tname">${t.name}</div>
+          <div class="ttier">${t.game === 'rps' ? 'ROCK PAPER SCISSORS' : 'NUMBER HUNT'} &middot; <span class="${status.cls}">${status.label}</span> &middot; ${count}/${t.maxPlayers} players &middot; ${t.prizePool} &#129689; pool</div>
+        </div>
+        <span class="arrow">&#9654;</span>
+      </div>
+    `;
+  }).join('');
+
+  listEl.innerHTML = rows;
+}
+
+async function showTournamentDetail(tournyId){
+  const t = activeTournaments.find(x => x.id === tournyId);
+  if(!t){ showTournamentHub(); return; }
+
+  const now = Date.now();
+  const status = tournamentStatus(t);
+  const isJoined = currentAccount && t.participants && t.participants.some(p => p.username.toLowerCase() === currentAccount.username.toLowerCase());
+  const isFull = t.participants && t.participants.length >= t.maxPlayers;
+  const hasEnded = now > t.endTime;
+  const hasStarted = now > t.startTime;
+
+  let timeDisplay;
+  if(now < t.startTime){
+    timeDisplay = `starts in <span style="color:var(--yellow);">${formatSeconds((t.startTime - now) / 1000)}</span>`;
+  } else if(now < t.endTime){
+    timeDisplay = `<span style="color:var(--pink);">${formatSeconds((t.endTime - now) / 1000)}</span> remaining`;
+  } else {
+    timeDisplay = `tournament has ended`;
+  }
+
+  const sortedParticipants = t.participants
+    ? [...t.participants].sort((a, b) => (b.wins || 0) - (a.wins || 0))
+    : [];
+
+  const participantList = sortedParticipants.length > 0
+    ? sortedParticipants.map((p, i) => `
+        <div class="rank-row">
+          <span class="rname"><span class="rnum">#${i + 1}</span><span>${p.avatar || DEFAULT_AVATAR}</span>${p.username}</span>
+          <span class="rpts">${p.wins || 0}W</span>
+        </div>
+      `).join('')
+    : `<p style="color:var(--dim); font-size:11px;">no participants yet &mdash; be the first to join!</p>`;
+
+  let joinButton = '';
+  if(!currentAccount){
+    joinButton = `<button class="primary" onclick="beep(300); showLogin()">LOGIN TO JOIN</button>`;
+  } else if(isJoined){
+    joinButton = `<button class="ghost" disabled>&#10003; YOU'RE IN</button>`;
+  } else if(isFull){
+    joinButton = `<button class="ghost" disabled>TOURNAMENT FULL</button>`;
+  } else if(hasStarted){
+    joinButton = `<button class="ghost" disabled>ALREADY STARTED</button>`;
+  } else {
+    joinButton = `<button class="primary" onclick="beep(520); joinTournament('${t.id}')">JOIN TOURNAMENT</button>`;
+  }
+
+  render(`
+    ${accountBar()}
+    <h2 class="title">${t.name}</h2>
+    <div class="tourny-detail-card">
+      <p style="margin:0 0 6px; color:var(--dim); font-size:11px;">
+        ${t.game === 'rps' ? 'ROCK PAPER SCISSORS' : 'NUMBER HUNT'} &middot; <span class="${status.cls}">${status.label}</span>
+      </p>
+      <p style="margin:0 0 6px; font-size:12px;">
+        Prize pool: <span style="color:var(--yellow);">${t.prizePool} &#129689;</span>
+      </p>
+      <p style="margin:0; font-size:11px; color:var(--dim);">${timeDisplay}</p>
+    </div>
+
+    <div class="tourny-section-label">PARTICIPANTS (${t.participants ? t.participants.length : 0}/${t.maxPlayers})</div>
+    <div style="margin-bottom:16px;">
+      ${participantList}
+    </div>
+
+    <div class="menu-row">
+      ${hasEnded ? '' : joinButton}
+      <a class="back-link" style="text-align:center;" onclick="beep(300); showTournamentHub()">&#8592; BACK TO TOURNAMENTS</a>
+    </div>
+  `);
+}
+
+async function joinTournament(tournyId){
+  if(!currentAccount){ showLogin(); return; }
+
+  const t = activeTournaments.find(x => x.id === tournyId);
+  if(!t){ showTournamentHub(); return; }
+
+  if(!Array.isArray(t.participants)) t.participants = [];
+
+  if(t.participants.some(p => p.username.toLowerCase() === currentAccount.username.toLowerCase())){
+    showTournamentDetail(tournyId);
+    return;
+  }
+  if(t.participants.length >= t.maxPlayers){
+    showTournamentDetail(tournyId);
+    return;
+  }
+  if(Date.now() > t.startTime){
+    showTournamentDetail(tournyId);
+    return;
+  }
+
+  t.participants.push({
+    username: currentAccount.username,
+    avatar: currentAccount.avatar || DEFAULT_AVATAR,
+    level: currentAccount.level,
+    wins: 0,
+    joinedAt: Date.now()
+  });
+
+  const ok = await storageSet(`tournament_${t.id}`, JSON.stringify(t));
+  if(ok){
+    beep(880, 0.15);
+  }
+  showTournamentDetail(tournyId);
+}
+
+// ---------- TOURNAMENT ADMIN HELPERS ----------
+// Call these from the browser console (F12) whenever you want to run a
+// tournament. Nothing in the UI creates one automatically — the hub just
+// stays empty until you do.
+//
+//   createTournament('WEEKEND WARRIORS', 'rps', 8, 30, 200)
+//     name            display name
+//     game            'rps' or 'nh'
+//     maxPlayers      4, 8, 16, 32...
+//     durationMinutes how long the tournament runs once it starts
+//                     (it always opens for joining 5 minutes from now)
+//     prizePool       coins shown as the total pot (informational)
+//
+//   recordTournamentWin('tourny_...', 'SomeUsername')
+//     bump a participant's win count by 1 (call this after they win a
+//     match you're running for the event)
+//
+//   endTournamentNow('tourny_...')
+//     manually end a tournament early
+
+function generateTournamentId(){
+  return 'tourny_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+async function createTournament(name, game, maxPlayers, durationMinutes, prizePool){
+  const now = Date.now();
+  const startTime = now + 5 * 60 * 1000;
+  const endTime = startTime + durationMinutes * 60 * 1000;
+
+  const tournament = {
+    id: generateTournamentId(),
+    name,
+    game,
+    maxPlayers,
+    prizePool,
+    state: 'active',
+    createdAt: now,
+    startTime,
+    endTime,
+    participants: []
+  };
+
+  const ok = await storageSet(`tournament_${tournament.id}`, JSON.stringify(tournament));
+  if(ok){
+    console.log(`Tournament created: "${name}" (${tournament.id})`);
+  } else {
+    console.error('Failed to create tournament — check Supabase connection.');
+  }
+  return tournament;
+}
+
+async function recordTournamentWin(tournyId, username){
+  const raw = await storageGet(`tournament_${tournyId}`);
+  if(!raw){ console.error('Tournament not found:', tournyId); return false; }
+  let t;
+  try{ t = JSON.parse(raw); } catch(e){ console.error('Bad tournament data'); return false; }
+
+  const p = (t.participants || []).find(x => x.username.toLowerCase() === username.toLowerCase());
+  if(!p){ console.error('Player not in this tournament:', username); return false; }
+
+  p.wins = (p.wins || 0) + 1;
+  const ok = await storageSet(`tournament_${tournyId}`, JSON.stringify(t));
+  if(ok) console.log(`${username} now has ${p.wins} win(s) in "${t.name}"`);
+  return ok;
+}
+
+async function endTournamentNow(tournyId){
+  const raw = await storageGet(`tournament_${tournyId}`);
+  if(!raw){ console.error('Tournament not found:', tournyId); return false; }
+  let t;
+  try{ t = JSON.parse(raw); } catch(e){ console.error('Bad tournament data'); return false; }
+
+  t.endTime = Date.now();
+  const ok = await storageSet(`tournament_${tournyId}`, JSON.stringify(t));
+  if(ok) console.log(`Tournament "${t.name}" ended.`);
+  return ok;
+}
+
 // ---------- MENU ----------
 function showMenu(){
   stopNHPolling();
@@ -1582,6 +1882,10 @@ function showMenu(){
       </button>
       <button class="game-btn" onclick="beep(520); showRPSHub()">
         <span>ROCK &middot; PAPER &middot; SCISSORS<br><small style="color:var(--dim); font-weight:400;">vs CPU or a friend online</small></span>
+        <span class="arrow">&#9654;</span>
+      </button>
+      <button class="game-btn" onclick="beep(520); showTournamentHub()">
+        <span>TOURNAMENTS<br><small style="color:var(--dim); font-weight:400;">compete in timed events</small></span>
         <span class="arrow">&#9654;</span>
       </button>
     </div>
